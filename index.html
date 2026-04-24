@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LED Exposure Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --border: #253040;
+    --border-light: #2f3d50;
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #f97316;
+    --accent-light: #fb923c;
+    --success: #10b981;
+    --danger: #ef4444;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+    background-image: 
+      radial-gradient(ellipse at top right, rgba(249, 115, 22, 0.08), transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(59, 130, 246, 0.05), transparent 50%);
+  }
+  
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+  
+  header {
+    margin-bottom: 48px;
+  }
+  
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding: 6px 14px;
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent-light);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 48px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  
+  .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 650px;
+    line-height: 1.6;
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+  }
+  
+  .card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  
+  .card-number {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-light);
+  }
+  
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 500;
+  }
+  
+  .card-description {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+  
+  .upload-area {
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-tertiary);
+  }
+  
+  .upload-area:hover {
+    border-color: var(--accent);
+    background: rgba(249, 115, 22, 0.05);
+  }
+  
+  .upload-area.has-file {
+    border-color: var(--success);
+    border-style: solid;
+    background: rgba(16, 185, 129, 0.05);
+  }
+  
+  .upload-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+    opacity: 0.6;
+  }
+  
+  .upload-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  
+  .upload-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  
+  .file-name {
+    font-size: 13px;
+    color: var(--success);
+    font-weight: 500;
+    word-break: break-all;
+  }
+  
+  input[type="file"] {
+    display: none;
+  }
+  
+  .calculator-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .calculator-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  
+  .calc-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  
+  .toggle-group {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-tertiary);
+    padding: 4px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  
+  .toggle-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .toggle-btn:hover {
+    color: var(--text);
+  }
+  
+  .toggle-btn.active {
+    background: var(--bg-secondary);
+    color: var(--accent-light);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .input-btn {
+    width: 48px;
+    height: 56px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 500;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  
+  .input-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  
+  .number-input {
+    flex: 1;
+    height: 56px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+    color: var(--text);
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 500;
+    border-radius: var(--radius);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  
+  .number-input:focus {
+    border-color: var(--accent);
+  }
+  
+  .input-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+  }
+  
+  .input-hint strong {
+    color: var(--accent-light);
+    font-weight: 500;
+  }
+  
+  .results {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  
+  @media (max-width: 640px) {
+    .results { grid-template-columns: 1fr; }
+  }
+  
+  .result-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent);
+    opacity: 0.7;
+  }
+  
+  .result-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  
+  .result-value {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  
+  .result-unit {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  
+  .status-bar {
+    margin-top: 32px;
+    padding: 16px 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .status-bar strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+  
+  .error-msg {
+    padding: 14px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    border-radius: var(--radius);
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+  }
+  
+  .empty-state h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  footer {
+    text-align: center;
+    padding: 48px 0 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">● Sponsorship Intelligence</div>
+    <h1>LED Exposure <em>Calculator</em></h1>
+    <p class="subtitle">Upload your LED schedule and broadcast exposure data to generate normalized projections for any amount of scheduled inventory.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-number">1</div>
+        <div class="card-title">LED Schedule</div>
+      </div>
+      <p class="card-description">CSV with Game Date, Partner, Game Period, Duration columns</p>
+      <label class="upload-area" id="ledUploadArea" for="ledFile">
+        <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        <div class="upload-text" id="ledUploadText">Click to upload LED schedule</div>
+        <div class="upload-hint">CSV file</div>
+      </label>
+      <input type="file" id="ledFile" accept=".csv" />
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-number">2</div>
+        <div class="card-title">Broadcast Exposure</div>
+      </div>
+      <p class="card-description">CSV with Date, Partner, View Duration, Impressions, Value columns</p>
+      <label class="upload-area" id="broadcastUploadArea" for="broadcastFile">
+        <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+        <div class="upload-text" id="broadcastUploadText">Click to upload broadcast data</div>
+        <div class="upload-hint">CSV file</div>
+      </label>
+      <input type="file" id="broadcastFile" accept=".csv" />
+    </div>
+  </div>
+
+  <div class="calculator-section calc-disabled" id="calculatorSection">
+    <div class="section-label">Projection Calculator</div>
+    
+    <div id="emptyState" class="empty-state">
+      <h3>Upload both files to begin</h3>
+      <p>The calculator will activate once your data is processed</p>
+    </div>
+
+    <div id="calculatorUI" style="display: none;">
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-mode="broadcast">Broadcast TV</button>
+        <button class="toggle-btn" data-mode="streaming">Streaming</button>
+        <button class="toggle-btn" data-mode="combined">Combined</button>
+      </div>
+
+      <div class="section-label">Scheduled 30-second units</div>
+      <div class="input-row">
+        <button class="input-btn" id="decrementBtn">−</button>
+        <input type="number" class="number-input" id="unitsInput" value="6" min="0" max="500" />
+        <button class="input-btn" id="incrementBtn">+</button>
+      </div>
+      <div class="input-hint">= <strong id="secondsDisplay">180</strong> total seconds scheduled</div>
+
+      <div class="results">
+        <div class="result-card">
+          <div class="result-label">Projected Value</div>
+          <div class="result-value" id="valueResult">$0</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">On-Screen Exposure</div>
+          <div class="result-value"><span id="exposureResult">0</span><span class="result-unit">sec</span></div>
+        </div>
+        <div class="result-card">
+          <div class="result-label" id="impressionsLabel">Impressions</div>
+          <div class="result-value" id="impressionsResult">0</div>
+        </div>
+      </div>
+
+      <div class="status-bar" id="statusBar">
+        <div>Based on <strong id="sampleSize">0</strong> matched game-partner records</div>
+        <div id="modeDescription">Broadcast TV data only</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Built for sponsorship measurement · Normalized to 30-second increments · In-game only
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let ledData = null;
+let broadcastData = null;
+let metrics = {
+  broadcast: { value: 0, exposure: 0, impressions: 0, sampleSize: 0 },
+  streaming: { value: 0, exposure: 0, impressions: 0, sampleSize: 0 },
+  combined: { value: 0, exposure: 0, impressions: 0, sampleSize: 0 }
+};
+let currentMode = 'broadcast';
+
+// ============================================================
+// FILE UPLOAD HANDLERS
+// ============================================================
+document.getElementById('ledFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      ledData = results.data;
+      document.getElementById('ledUploadArea').classList.add('has-file');
+      document.getElementById('ledUploadText').innerHTML = '<span class="file-name">✓ ' + file.name + '</span><br><span style="font-size:12px;color:var(--text-muted)">' + ledData.length + ' rows loaded</span>';
+      tryProcessData();
+    },
+    error: (err) => alert('Error parsing LED file: ' + err.message)
+  });
+});
+
+document.getElementById('broadcastFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      broadcastData = results.data;
+      document.getElementById('broadcastUploadArea').classList.add('has-file');
+      document.getElementById('broadcastUploadText').innerHTML = '<span class="file-name">✓ ' + file.name + '</span><br><span style="font-size:12px;color:var(--text-muted)">' + broadcastData.length + ' rows loaded</span>';
+      tryProcessData();
+    },
+    error: (err) => alert('Error parsing broadcast file: ' + err.message)
+  });
+});
+
+// ============================================================
+// DATA PROCESSING
+// ============================================================
+function toNum(val) {
+  if (!val) return 0;
+  const str = String(val).replace(/,/g, '').replace(/\$/g, '').trim();
+  if (str.toLowerCase().includes('sum') || str.toLowerCase().includes('total')) return null;
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+
+function tryProcessData() {
+  if (!ledData || !broadcastData) return;
+  
+  try {
+    processData();
+    document.getElementById('calculatorSection').classList.remove('calc-disabled');
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('calculatorUI').style.display = 'block';
+    calculate();
+  } catch (err) {
+    alert('Error processing data: ' + err.message + '\n\nMake sure your CSV columns match the expected format.');
+  }
+}
+
+function processData() {
+  // Detect column names (case-insensitive)
+  const ledCols = findColumns(ledData[0], {
+    date: ['game date', 'date'],
+    partner: ['partner', 'brand'],
+    period: ['game period', 'period'],
+    duration: ['duration', 'seconds', 'time']
+  });
+  
+  const bcCols = findColumns(broadcastData[0], {
+    date: ['date', 'game date'],
+    partner: ['partner', 'brand'],
+    duration: ['view duration', 'exposure', 'duration'],
+    value: ['total value*', 'total value', 'value'],
+    hhImp: ['brand hh impressions', 'hh impressions', 'household impressions'],
+    streamImp: ['brand streaming impressions', 'streaming impressions']
+  });
+
+  // Group LED by (date, partner) - in-game only
+  const ledGrouped = {};
+  ledData.forEach(row => {
+    const period = String(row[ledCols.period] || '').toLowerCase();
+    if (!period.includes('half') || period.includes('halftime')) return;
+    
+    const date = row[ledCols.date];
+    const partner = row[ledCols.partner];
+    if (!date || !partner) return;
+    
+    const key = date + '|' + partner;
+    const dur = toNum(row[ledCols.duration]);
+    if (dur === null) return;
+    
+    ledGrouped[key] = (ledGrouped[key] || 0) + dur;
+  });
+
+  // Group broadcast by (date, partner)
+  const bcGrouped = {};
+  broadcastData.forEach(row => {
+    const date = row[bcCols.date];
+    const partner = row[bcCols.partner];
+    if (!date || !partner) return;
+    
+    const key = date + '|' + partner;
+    const dur = toNum(row[bcCols.duration]);
+    const val = toNum(row[bcCols.value]);
+    const hh = bcCols.hhImp ? toNum(row[bcCols.hhImp]) : 0;
+    const stream = bcCols.streamImp ? toNum(row[bcCols.streamImp]) : 0;
+    
+    if (dur === null) return;
+    
+    if (!bcGrouped[key]) bcGrouped[key] = { duration: 0, value: 0, hhImp: 0, streamImp: 0 };
+    bcGrouped[key].duration += dur;
+    bcGrouped[key].value += val;
+    bcGrouped[key].hhImp += hh;
+    bcGrouped[key].streamImp += stream;
+  });
+
+  // Merge and normalize
+  const matched = [];
+  for (const key in ledGrouped) {
+    if (bcGrouped[key] && ledGrouped[key] > 0) {
+      const units = ledGrouped[key] / 30;
+      matched.push({
+        valuePerUnit: bcGrouped[key].value / units,
+        exposurePerUnit: bcGrouped[key].duration / units,
+        hhImpPerUnit: bcGrouped[key].hhImp / units,
+        streamImpPerUnit: bcGrouped[key].streamImp / units,
+        hasHH: bcGrouped[key].hhImp > 0,
+        hasStream: bcGrouped[key].streamImp > 0
+      });
+    }
+  }
+
+  if (matched.length === 0) {
+    throw new Error('No matching records found between LED and broadcast data. Check that dates and partner names match.');
+  }
+
+  // Compute averages
+  const withHH = matched.filter(m => m.hasHH);
+  const withStream = matched.filter(m => m.hasStream);
+
+  metrics.broadcast = {
+    value: avg(withHH.map(m => m.valuePerUnit)) || 0,
+    exposure: avg(withHH.map(m => m.exposurePerUnit)) || 0,
+    impressions: avg(withHH.map(m => m.hhImpPerUnit)) || 0,
+    sampleSize: withHH.length
+  };
+  
+  metrics.streaming = {
+    value: avg(withStream.map(m => m.valuePerUnit)) || 0,
+    exposure: avg(withStream.map(m => m.exposurePerUnit)) || 0,
+    impressions: avg(withStream.map(m => m.streamImpPerUnit)) || 0,
+    sampleSize: withStream.length
+  };
+  
+  metrics.combined = {
+    value: avg(matched.map(m => m.valuePerUnit)),
+    exposure: avg(matched.map(m => m.exposurePerUnit)),
+    impressions: avg(matched.map(m => m.hhImpPerUnit + m.streamImpPerUnit)),
+    sampleSize: matched.length
+  };
+}
+
+function findColumns(sampleRow, mapping) {
+  const result = {};
+  const cols = Object.keys(sampleRow);
+  for (const key in mapping) {
+    const candidates = mapping[key];
+    const found = cols.find(c => candidates.some(cand => c.toLowerCase().trim() === cand.toLowerCase()));
+    if (found) result[key] = found;
+    else {
+      // Try partial match
+      const partial = cols.find(c => candidates.some(cand => c.toLowerCase().includes(cand.toLowerCase())));
+      if (partial) result[key] = partial;
+    }
+  }
+  return result;
+}
+
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+// ============================================================
+// CALCULATOR UI
+// ============================================================
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    calculate();
+  });
+});
+
+const unitsInput = document.getElementById('unitsInput');
+document.getElementById('decrementBtn').addEventListener('click', () => {
+  unitsInput.value = Math.max(0, (parseInt(unitsInput.value) || 0) - 1);
+  calculate();
+});
+document.getElementById('incrementBtn').addEventListener('click', () => {
+  unitsInput.value = (parseInt(unitsInput.value) || 0) + 1;
+  calculate();
+});
+unitsInput.addEventListener('input', calculate);
+
+function calculate() {
+  const units = parseInt(unitsInput.value) || 0;
+  document.getElementById('secondsDisplay').textContent = units * 30;
+
+  const m = metrics[currentMode];
+  const value = m.value * units;
+  const exposure = m.exposure * units;
+  const impressions = Math.round(m.impressions * units);
+
+  document.getElementById('valueResult').textContent = '$' + value.toLocaleString('en-US', { 
+    minimumFractionDigits: value >= 10000 ? 0 : 2, 
+    maximumFractionDigits: value >= 10000 ? 0 : 2 
+  });
+  document.getElementById('exposureResult').textContent = exposure.toFixed(1);
+  document.getElementById('impressionsResult').textContent = impressions.toLocaleString();
+
+  const labels = {
+    broadcast: { label: 'HH Impressions', desc: 'Broadcast TV games only' },
+    streaming: { label: 'Streaming Impressions', desc: 'Games with streaming data' },
+    combined: { label: 'Total Impressions', desc: 'All broadcast + streaming' }
+  };
+  document.getElementById('impressionsLabel').textContent = labels[currentMode].label;
+  document.getElementById('modeDescription').textContent = labels[currentMode].desc;
+  document.getElementById('sampleSize').textContent = m.sampleSize;
+}
+</script>
+
+</body>
+</html>
