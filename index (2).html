@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LED Exposure Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2332;
+    --border: #253040;
+    --border-light: #2f3d50;
+    --text: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #f97316;
+    --accent-light: #fb923c;
+    --success: #10b981;
+    --danger: #ef4444;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+    background-image: 
+      radial-gradient(ellipse at top right, rgba(249, 115, 22, 0.08), transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(59, 130, 246, 0.05), transparent 50%);
+  }
+  
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+  
+  header {
+    margin-bottom: 48px;
+  }
+  
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding: 6px 14px;
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent-light);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 48px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  
+  .subtitle {
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 650px;
+    line-height: 1.6;
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  
+  @media (max-width: 768px) {
+    .grid { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+  }
+  
+  .card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  
+  .card-number {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-light);
+  }
+  
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 500;
+  }
+  
+  .card-description {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+  
+  .upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px dashed var(--border-light);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--bg-tertiary);
+    min-height: 180px;
+  }
+  
+  .upload-area:hover {
+    border-color: var(--accent);
+    background: rgba(249, 115, 22, 0.04);
+  }
+  
+  .upload-area:hover .upload-icon {
+    color: var(--accent);
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+  
+  .upload-area.has-file {
+    border-color: var(--success);
+    border-style: solid;
+    background: rgba(16, 185, 129, 0.04);
+  }
+  
+  .upload-area.has-file .upload-icon {
+    color: var(--success);
+    opacity: 1;
+  }
+  
+  .upload-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  
+  .upload-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  
+  .upload-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .file-name {
+    font-size: 13px;
+    color: var(--success);
+    font-weight: 500;
+    word-break: break-all;
+  }
+  
+  input[type="file"] {
+    display: none;
+  }
+  
+  .calculator-section {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .calculator-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  
+  .calc-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  
+  .toggle-group {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-tertiary);
+    padding: 4px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  
+  .toggle-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .toggle-btn:hover {
+    color: var(--text);
+  }
+  
+  .toggle-btn.active {
+    background: var(--bg-secondary);
+    color: var(--accent-light);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .input-btn {
+    width: 48px;
+    height: 56px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 500;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  
+  .input-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  
+  .number-input {
+    flex: 1;
+    height: 56px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-tertiary);
+    color: var(--text);
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 500;
+    border-radius: var(--radius);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  
+  .number-input:focus {
+    border-color: var(--accent);
+  }
+  
+  .input-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+  }
+  
+  .input-hint strong {
+    color: var(--accent-light);
+    font-weight: 500;
+  }
+  
+  .tiers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  @media (max-width: 900px) {
+    .tiers { grid-template-columns: 1fr; }
+  }
+  
+  .tier-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+  
+  .tier-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  
+  .tier-card.conservative::before { background: #64748b; }
+  .tier-card.average::before { background: var(--accent); }
+  .tier-card.optimistic::before { background: var(--success); }
+  
+  .tier-card:hover {
+    border-color: var(--border-light);
+    transform: translateY(-2px);
+  }
+  
+  .tier-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .tier-name {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  
+  .tier-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  
+  .tier-card.conservative .tier-badge {
+    background: rgba(100, 116, 139, 0.15);
+    color: #94a3b8;
+  }
+  .tier-card.average .tier-badge {
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--accent-light);
+  }
+  .tier-card.optimistic .tier-badge {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+  }
+  
+  .tier-metric {
+    margin-bottom: 18px;
+  }
+  
+  .tier-metric:last-child { margin-bottom: 0; }
+  
+  .tier-metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  
+  .tier-metric-value {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  
+  .tier-metric-unit {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    margin-left: 3px;
+  }
+  
+  .export-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .export-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  
+  .export-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .status-bar {
+    margin-top: 32px;
+    padding: 16px 20px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .status-bar strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+  
+  .error-msg {
+    padding: 14px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    border-radius: var(--radius);
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+  }
+  
+  .empty-state h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  
+  footer {
+    text-align: center;
+    padding: 48px 0 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">● Sponsorship Intelligence</div>
+    <h1>LED Exposure <em>Calculator</em></h1>
+    <p class="subtitle">Upload your LED schedule and broadcast exposure data to generate normalized projections for any amount of scheduled inventory.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-number">1</div>
+        <div class="card-title">LED Schedule</div>
+      </div>
+      <p class="card-description">CSV with Game Date, Partner, Game Period, Duration columns</p>
+      <label class="upload-area" id="ledUploadArea" for="ledFile">
+        <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v12m0-12l-4 4m4-4l4 4M4 20h16"/>
+        </svg>
+        <div class="upload-text" id="ledUploadText">Click to upload LED schedule</div>
+        <div class="upload-hint">CSV file</div>
+      </label>
+      <input type="file" id="ledFile" accept=".csv" />
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-number">2</div>
+        <div class="card-title">Broadcast Exposure</div>
+      </div>
+      <p class="card-description">CSV with Date, Partner, View Duration, Impressions, Value columns</p>
+      <label class="upload-area" id="broadcastUploadArea" for="broadcastFile">
+        <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v12m0-12l-4 4m4-4l4 4M4 20h16"/>
+        </svg>
+        <div class="upload-text" id="broadcastUploadText">Click to upload broadcast data</div>
+        <div class="upload-hint">CSV file</div>
+      </label>
+      <input type="file" id="broadcastFile" accept=".csv" />
+    </div>
+  </div>
+
+  <div class="calculator-section calc-disabled" id="calculatorSection">
+    <div class="section-label">Projection Calculator</div>
+    
+    <div id="emptyState" class="empty-state">
+      <h3>Upload both files to begin</h3>
+      <p>The calculator will activate once your data is processed</p>
+    </div>
+
+    <div id="calculatorUI" style="display: none;">
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-mode="broadcast">Broadcast TV</button>
+        <button class="toggle-btn" data-mode="streaming">Streaming</button>
+        <button class="toggle-btn" data-mode="combined">Combined</button>
+      </div>
+
+      <div class="section-label">Scheduled 30-second units</div>
+      <div class="input-row">
+        <button class="input-btn" id="decrementBtn">−</button>
+        <input type="number" class="number-input" id="unitsInput" value="6" min="0" max="500" />
+        <button class="input-btn" id="incrementBtn">+</button>
+      </div>
+      <div class="input-hint">= <strong id="secondsDisplay">180</strong> total seconds scheduled</div>
+
+      <div class="results">
+        <div class="tiers">
+          <div class="tier-card conservative">
+            <div class="tier-header">
+              <div class="tier-name">Conservative</div>
+              <div class="tier-badge">Bottom 33%</div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label">Projected Value</div>
+              <div class="tier-metric-value" id="valueConservative">$0</div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label">On-Screen Exposure</div>
+              <div class="tier-metric-value"><span id="exposureConservative">0</span><span class="tier-metric-unit">sec</span></div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label" id="impressionsLabelConservative">Impressions</div>
+              <div class="tier-metric-value" id="impressionsConservative">0</div>
+            </div>
+          </div>
+
+          <div class="tier-card average">
+            <div class="tier-header">
+              <div class="tier-name">Average</div>
+              <div class="tier-badge">Middle 33%</div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label">Projected Value</div>
+              <div class="tier-metric-value" id="valueAverage">$0</div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label">On-Screen Exposure</div>
+              <div class="tier-metric-value"><span id="exposureAverage">0</span><span class="tier-metric-unit">sec</span></div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label" id="impressionsLabelAverage">Impressions</div>
+              <div class="tier-metric-value" id="impressionsAverage">0</div>
+            </div>
+          </div>
+
+          <div class="tier-card optimistic">
+            <div class="tier-header">
+              <div class="tier-name">Optimistic</div>
+              <div class="tier-badge">Top 33%</div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label">Projected Value</div>
+              <div class="tier-metric-value" id="valueOptimistic">$0</div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label">On-Screen Exposure</div>
+              <div class="tier-metric-value"><span id="exposureOptimistic">0</span><span class="tier-metric-unit">sec</span></div>
+            </div>
+            <div class="tier-metric">
+              <div class="tier-metric-label" id="impressionsLabelOptimistic">Impressions</div>
+              <div class="tier-metric-value" id="impressionsOptimistic">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="export-row">
+          <button class="export-btn" id="exportBtn">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Export to CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="status-bar" id="statusBar">
+        <div>Tiered by exposure ratio · <strong id="sampleSize">0</strong> partners after filtering · <strong id="excludedCount">0</strong> excluded (below threshold)</div>
+        <div id="modeDescription">Broadcast TV data only</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Built for sponsorship measurement · Normalized to 30-second increments · In-game only
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let ledData = null;
+let broadcastData = null;
+let metrics = {
+  broadcast: { conservative: null, average: null, optimistic: null, sampleSize: 0, excluded: 0 },
+  streaming: { conservative: null, average: null, optimistic: null, sampleSize: 0, excluded: 0 },
+  combined: { conservative: null, average: null, optimistic: null, sampleSize: 0, excluded: 0 }
+};
+let currentMode = 'broadcast';
+
+// Minimum exposure threshold: 5 seconds per 30-second unit (~16.7%)
+const MIN_EXPOSURE_THRESHOLD = 5;
+
+// ============================================================
+// FILE UPLOAD HANDLERS
+// ============================================================
+document.getElementById('ledFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      ledData = results.data;
+      document.getElementById('ledUploadArea').classList.add('has-file');
+      document.getElementById('ledUploadText').innerHTML = '<span class="file-name">✓ ' + file.name + '</span><br><span style="font-size:12px;color:var(--text-muted)">' + ledData.length + ' rows loaded</span>';
+      tryProcessData();
+    },
+    error: (err) => alert('Error parsing LED file: ' + err.message)
+  });
+});
+
+document.getElementById('broadcastFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      broadcastData = results.data;
+      document.getElementById('broadcastUploadArea').classList.add('has-file');
+      document.getElementById('broadcastUploadText').innerHTML = '<span class="file-name">✓ ' + file.name + '</span><br><span style="font-size:12px;color:var(--text-muted)">' + broadcastData.length + ' rows loaded</span>';
+      tryProcessData();
+    },
+    error: (err) => alert('Error parsing broadcast file: ' + err.message)
+  });
+});
+
+// ============================================================
+// DATA PROCESSING
+// ============================================================
+function toNum(val) {
+  if (!val) return 0;
+  const str = String(val).replace(/,/g, '').replace(/\$/g, '').trim();
+  if (str.toLowerCase().includes('sum') || str.toLowerCase().includes('total')) return null;
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+
+function isFieldLED(location) {
+  // Match: field led, pitchside led, fieldboard led, fieldside led, field board led, etc.
+  const fieldKeywords = ['field', 'pitchside', 'pitch', 'fieldboard', 'fieldside', 'field board'];
+  return fieldKeywords.some(keyword => location.includes(keyword));
+}
+
+function tryProcessData() {
+  if (!ledData || !broadcastData) return;
+  
+  try {
+    processData();
+    document.getElementById('calculatorSection').classList.remove('calc-disabled');
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('calculatorUI').style.display = 'block';
+    calculate();
+  } catch (err) {
+    alert('Error processing data: ' + err.message + '\n\nMake sure your CSV columns match the expected format.');
+  }
+}
+
+function processData() {
+  // Detect column names (case-insensitive)
+  const ledCols = findColumns(ledData[0], {
+    date: ['game date', 'date'],
+    partner: ['partner', 'brand'],
+    period: ['game period', 'period'],
+    location: ['location'],
+    duration: ['duration', 'seconds', 'time']
+  });
+  
+  const bcCols = findColumns(broadcastData[0], {
+    date: ['date', 'game date'],
+    partner: ['partner', 'brand'],
+    location: ['location'],
+    duration: ['view duration', 'exposure', 'duration'],
+    value: ['total value*', 'total value', 'value'],
+    hhImp: ['brand hh impressions', 'hh impressions', 'household impressions'],
+    streamImp: ['brand streaming impressions', 'streaming impressions']
+  });
+
+  // First pass: get all dates from LED schedule that have 1st/2nd Half + Field LED data
+  const validLedDates = new Set();
+  ledData.forEach(row => {
+    const period = String(row[ledCols.period] || '').toLowerCase().trim();
+    const location = String(row[ledCols.location] || '').toLowerCase().trim();
+    
+    // Only 1st Half and 2nd Half, and only Field/Pitchside LED
+    if ((period === '1st half' || period === '2nd half') && isFieldLED(location)) {
+      const date = String(row[ledCols.date] || '').trim();
+      if (date) validLedDates.add(date);
+    }
+  });
+
+  // Group LED by (date, partner) - in-game + Field LED only
+  const ledGrouped = {};
+  ledData.forEach(row => {
+    const period = String(row[ledCols.period] || '').toLowerCase().trim();
+    const location = String(row[ledCols.location] || '').toLowerCase().trim();
+    
+    // Only 1st Half and 2nd Half, only Field/Pitchside LED
+    if (!((period === '1st half' || period === '2nd half') && isFieldLED(location))) return;
+    
+    const date = String(row[ledCols.date] || '').trim();
+    const partner = String(row[ledCols.partner] || '').trim();
+    if (!date || !partner) return;
+    
+    const key = date + '|' + partner;
+    const dur = toNum(row[ledCols.duration]);
+    if (dur === null) return;
+    
+    ledGrouped[key] = (ledGrouped[key] || 0) + dur;
+  });
+
+  // Group broadcast by (date, partner) - Field LED only, only for dates we have LED data
+  const bcGrouped = {};
+  broadcastData.forEach(row => {
+    const location = String(row[bcCols.location] || '').toLowerCase().trim();
+    
+    // Only Field/Pitchside LED
+    if (!isFieldLED(location)) return;
+    
+    const date = String(row[bcCols.date] || '').trim();
+    const partner = String(row[bcCols.partner] || '').trim();
+    
+    // Only use broadcast data for dates we have LED schedule data
+    if (!validLedDates.has(date)) return;
+    if (!date || !partner) return;
+    
+    const key = date + '|' + partner;
+    const dur = toNum(row[bcCols.duration]);
+    const val = toNum(row[bcCols.value]);
+    const hh = bcCols.hhImp ? toNum(row[bcCols.hhImp]) : 0;
+    const stream = bcCols.streamImp ? toNum(row[bcCols.streamImp]) : 0;
+    
+    if (dur === null) return;
+    
+    if (!bcGrouped[key]) bcGrouped[key] = { duration: 0, value: 0, hhImp: 0, streamImp: 0 };
+    bcGrouped[key].duration += dur;
+    bcGrouped[key].value += val;
+    bcGrouped[key].hhImp += hh;
+    bcGrouped[key].streamImp += stream;
+  });
+
+  // Merge and normalize
+  const allMatched = [];
+  for (const key in ledGrouped) {
+    if (bcGrouped[key] && ledGrouped[key] > 0) {
+      const units = ledGrouped[key] / 30;
+      let exposurePerUnit = bcGrouped[key].duration / units;
+      
+      // HARD CAP: exposure cannot exceed scheduled time
+      // Max 30 seconds of exposure per 30-second unit
+      exposurePerUnit = Math.min(exposurePerUnit, 30);
+      
+      allMatched.push({
+        partner: key.split('|')[1],
+        date: key.split('|')[0],
+        ledScheduled: ledGrouped[key],
+        broadcastExposure: bcGrouped[key].duration,
+        valuePerUnit: bcGrouped[key].value / units,
+        exposurePerUnit: exposurePerUnit,
+        hhImpPerUnit: bcGrouped[key].hhImp / units,
+        streamImpPerUnit: bcGrouped[key].streamImp / units,
+        hasHH: bcGrouped[key].hhImp > 0,
+        hasStream: bcGrouped[key].streamImp > 0,
+        // exposure ratio is what we filter & tier by
+        exposureRatio: exposurePerUnit / 30
+      });
+    }
+  }
+
+  if (allMatched.length === 0) {
+    throw new Error('No matching Field LED records found between LED and broadcast data. Check that dates, partner names, and locations (Field LED) match.');
+  }
+
+  // Filter out partners with less than 5 seconds of exposure per 30s unit
+  const filtered = allMatched.filter(m => m.exposurePerUnit >= MIN_EXPOSURE_THRESHOLD);
+  const excludedTotal = allMatched.length - filtered.length;
+  
+  if (filtered.length === 0) {
+    throw new Error('All records were below the minimum exposure threshold (5 seconds). Data may be unreliable.');
+  }
+
+  // Compute metrics for each mode
+  metrics.broadcast = computeTieredMetrics(filtered.filter(m => m.hasHH), 'hh', excludedTotal);
+  metrics.streaming = computeTieredMetrics(filtered.filter(m => m.hasStream), 'stream', excludedTotal);
+  metrics.combined = computeTieredMetrics(filtered, 'combined', excludedTotal);
+}
+
+function computeTieredMetrics(records, impType, excludedTotal) {
+  if (records.length === 0) {
+    return {
+      conservative: { value: 0, exposure: 0, impressions: 0 },
+      average: { value: 0, exposure: 0, impressions: 0 },
+      optimistic: { value: 0, exposure: 0, impressions: 0 },
+      sampleSize: 0,
+      excluded: excludedTotal
+    };
+  }
+  
+  // Sort by exposure ratio (low to high)
+  const sorted = [...records].sort((a, b) => a.exposureRatio - b.exposureRatio);
+  
+  // Split into thirds
+  const third = Math.ceil(sorted.length / 3);
+  const conservative = sorted.slice(0, third);
+  const optimistic = sorted.slice(-third);
+  // Average = middle group, but if odd numbers fall through, use middle slice
+  const avgStart = Math.floor(sorted.length / 3);
+  const avgEnd = Math.ceil(sorted.length * 2 / 3);
+  const average = sorted.slice(avgStart, avgEnd);
+  
+  const getImpressions = (r) => {
+    if (impType === 'hh') return r.hhImpPerUnit;
+    if (impType === 'stream') return r.streamImpPerUnit;
+    return r.hhImpPerUnit + r.streamImpPerUnit;
+  };
+  
+  const tierAvg = (arr) => ({
+    value: avg(arr.map(r => r.valuePerUnit)),
+    exposure: avg(arr.map(r => r.exposurePerUnit)),
+    impressions: avg(arr.map(getImpressions))
+  });
+  
+  return {
+    conservative: tierAvg(conservative),
+    average: tierAvg(average.length > 0 ? average : sorted),
+    optimistic: tierAvg(optimistic),
+    sampleSize: records.length,
+    excluded: excludedTotal
+  };
+}
+
+function findColumns(sampleRow, mapping) {
+  const result = {};
+  const cols = Object.keys(sampleRow);
+  for (const key in mapping) {
+    const candidates = mapping[key];
+    const found = cols.find(c => candidates.some(cand => c.toLowerCase().trim() === cand.toLowerCase()));
+    if (found) result[key] = found;
+    else {
+      // Try partial match
+      const partial = cols.find(c => candidates.some(cand => c.toLowerCase().includes(cand.toLowerCase())));
+      if (partial) result[key] = partial;
+    }
+  }
+  return result;
+}
+
+function avg(arr) {
+  if (!arr.length) return 0;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+// ============================================================
+// CALCULATOR UI
+// ============================================================
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    calculate();
+  });
+});
+
+const unitsInput = document.getElementById('unitsInput');
+document.getElementById('decrementBtn').addEventListener('click', () => {
+  unitsInput.value = Math.max(0, (parseInt(unitsInput.value) || 0) - 1);
+  calculate();
+});
+document.getElementById('incrementBtn').addEventListener('click', () => {
+  unitsInput.value = (parseInt(unitsInput.value) || 0) + 1;
+  calculate();
+});
+unitsInput.addEventListener('input', calculate);
+
+function calculate() {
+  const units = parseInt(unitsInput.value) || 0;
+  document.getElementById('secondsDisplay').textContent = units * 30;
+
+  const m = metrics[currentMode];
+
+  ['conservative', 'average', 'optimistic'].forEach(tier => {
+    const tierData = m[tier];
+    const value = tierData.value * units;
+    const exposure = tierData.exposure * units;
+    const impressions = Math.round(tierData.impressions * units);
+    
+    const cap = tier.charAt(0).toUpperCase() + tier.slice(1);
+    document.getElementById('value' + cap).textContent = '$' + value.toLocaleString('en-US', { 
+      minimumFractionDigits: value >= 10000 ? 0 : 2, 
+      maximumFractionDigits: value >= 10000 ? 0 : 2 
+    });
+    document.getElementById('exposure' + cap).textContent = exposure.toFixed(1);
+    document.getElementById('impressions' + cap).textContent = impressions.toLocaleString();
+  });
+
+  const labels = {
+    broadcast: { label: 'HH Impressions', desc: 'Broadcast TV games only' },
+    streaming: { label: 'Streaming Impressions', desc: 'Games with streaming data' },
+    combined: { label: 'Total Impressions', desc: 'All broadcast + streaming' }
+  };
+  
+  ['Conservative', 'Average', 'Optimistic'].forEach(tier => {
+    document.getElementById('impressionsLabel' + tier).textContent = labels[currentMode].label;
+  });
+  document.getElementById('modeDescription').textContent = labels[currentMode].desc;
+  document.getElementById('sampleSize').textContent = m.sampleSize;
+  document.getElementById('excludedCount').textContent = m.excluded;
+}
+
+// Export to CSV
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const units = parseInt(unitsInput.value) || 0;
+  const seconds = units * 30;
+  const m = metrics[currentMode];
+  const modeLabels = {
+    broadcast: 'Broadcast TV',
+    streaming: 'Streaming',
+    combined: 'Combined'
+  };
+  const impLabels = {
+    broadcast: 'HH Impressions',
+    streaming: 'Streaming Impressions',
+    combined: 'Total Impressions'
+  };
+
+  const rows = [
+    ['LED Exposure Calculator - Projection Report'],
+    ['Generated', new Date().toLocaleString()],
+    ['Distribution Type', modeLabels[currentMode]],
+    ['Scheduled 30-second Units', units],
+    ['Total Scheduled Seconds', seconds],
+    ['Sample Size (filtered)', m.sampleSize],
+    ['Excluded (below 5s threshold)', m.excluded],
+    [],
+    ['Tier', 'Projected Value', 'On-Screen Exposure (sec)', impLabels[currentMode]]
+  ];
+  
+  ['conservative', 'average', 'optimistic'].forEach(tier => {
+    const t = m[tier];
+    const tierName = tier.charAt(0).toUpperCase() + tier.slice(1);
+    rows.push([
+      tierName,
+      '$' + (t.value * units).toFixed(2),
+      (t.exposure * units).toFixed(1),
+      Math.round(t.impressions * units)
+    ]);
+  });
+
+  const csv = rows.map(row => row.map(cell => {
+    const str = String(cell);
+    return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+  }).join(',')).join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  link.href = url;
+  link.download = `led-projection-${currentMode}-${units}units-${dateStr}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+});
+</script>
+
+</body>
+</html>
